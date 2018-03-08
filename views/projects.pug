@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  h4=title+": "+len 
+  - if (projectname)
+    !=[projectname]
+  p  
+  - if (str)
+    !=[str]
+  p  
+  - if (addFiles)
+    !=[addFiles]  
+  p
+  table(class='table-striped table-dark table-bordered table-xl' id='myTable')
+    
+    tbody
+      each row in values
+        each cell in row
+         tr
+          each content in cell
+           td 
+            !=[content]
+            
+
+

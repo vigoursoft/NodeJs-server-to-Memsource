@@ -1,0 +1,17 @@
+.sidebar-nav {
+  margin-top: 20px;
+  padding: 0;
+  list-style: none;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+
+.form-control {
+  width: 20%;
+}
+
+

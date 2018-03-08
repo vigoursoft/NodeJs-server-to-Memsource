@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  h4= title
+ 
+  if error
+    p Error getting dynamic content.
+  else
+    p The linguists table has the following records:
+    
+    table(class='table-striped table-dark table-bordered table-xl')
+      tr 
+        each val in thead
+          td=val
+      
+      tbody
+        each entry in items
+          tr
+            each val, index in entry
+              td=val

@@ -1,0 +1,22 @@
+extends layout
+ 
+block content
+  h4= title
+  p 
+  P You cannot add a new language to the project. 
+  p To translate a file into fewer languages than listed here, simply remove the language from the Target Languages field.
+  form(method='post', enctype='multipart/form-data' )
+    input(type='hidden', id='frmproject' name='project', value=project )
+    input(type='hidden', id='token' name='token', value=token )
+    fieldset(class='fields')
+    div.form-group
+      label(for='targetLang') Target languages:
+      input#targetLang.form-control(type='text',  name='targetLang' required='true' value=langs )  
+    
+      label(for='fileupload') File:
+      input(type='file',  name='fileupload' )
+      
+    p
+    p
+    button.btn.btn-primary(type='submit') Submit
+  

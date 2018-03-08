@@ -1,0 +1,18 @@
+extends layout
+ 
+block content
+  h1= title
+  p 
+  form(method='post', enctype='' )
+    input(type='hidden', id='token' name='token', value=token )
+    fieldset(class='fields')
+    div.form-group
+      label(for='project') Project name:
+      input#project.form-control(type='text',  placeholder='Enter a project name'  name='project' required='true' value='' )
+      label(for='sourceLang') Source language:
+      input#sourceLang.form-control(type='text',  placeholder='en'  name='sourceLang' required='true' value='' )
+      label(for='targetLang') Target languages:
+      input#targetLang.form-control(type='text',  placeholder='lang1 lang2 lang3 etc'  name='targetLang' required='true' value='' )
+    p
+    p
+    button.btn.btn-primary(type='submit') Submit

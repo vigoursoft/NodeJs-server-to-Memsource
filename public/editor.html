@@ -1,0 +1,532 @@
+<html>
+<head>
+<meta charset="UTF-8">
+ <!-- Latest compiled and minified CSS -->
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+ <!-- jQuery library -->
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+ 
+ <!-- Latest compiled JavaScript 
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> 
+-->
+<title>XLiff Editor</title>
+<style>
+
+#header {
+    position: fixed;
+    top: 0px;
+    height: 60px;
+    width: 100%;
+    background: lightblue;
+}
+#tableDiv{ margin-top: 60px; height: 400px; overflow: auto;  width: 70%; }
+#resultsDiv{ margin-top: 60px; height: 400px; overflow: auto;  width: 25%; }
+/* bottom tables */
+#tmxDiv{ margin-top: 20px; height: 400px; overflow: auto;  width: 50%;}
+#tbxDiv{ margin-top: 20px; height: 400px; overflow: auto;  width: 45%;  }
+
+.xliffTable {
+  table-layout: fixed;
+  width: 100%;
+}
+.xliffTable td {
+  overflow: auto;
+  
+}
+
+/* Column widths are based on these cells */
+.index {
+  width: 5%;
+}
+.source {
+  width: 45%;
+}
+.target {
+  width: 45%;
+}
+
+
+td, th {  border: 1px solid #dddddd;  text-align: left;  padding: 2px;}
+tr:nth-child(even) { background-color: #dddddd;}
+
+/* xliff and other div side by side; tmxDiv underneath */
+#bod{
+  display: flex;
+}
+#tableDiv{
+  flex: 0 0 65%;
+}
+#resultsDiv{
+  flex: 1;
+}
+
+
+#tmx {
+  display: flex;
+}
+#tmxDiv {
+  flex: 0 0 50%;
+}
+ #tbxDiv{
+  flex: 1;
+}
+
+</style>
+
+
+<script>
+/* The alpha version
+by Hans
+Copyright: whatever, use, modify, sell, trade, just say thank you
+*/
+
+var targetNodes=[];
+
+
+var xmlDoc;
+// keeping this global - might be a problem for large tmx docs
+var tmxDoc;
+
+
+var xliffContent;
+var tmxContent;
+var tbxContent;
+
+// inside onload
+ window.onload = function () {
+ 
+ xliffContent = localStorage.xliff;
+	if (xliffContent) {	
+	    parseXliff();
+	}
+ 
+ // Check for the various File API support.
+if (window.File && window.FileReader && window.FileList && window.Blob) {
+ // alert("Browser supports the required apis");
+} else {
+  alert('The File APIs are not fully supported by your browser.');
+}
+ 
+  function readMultipleFiles(evt) {
+    //Retrieve all the files from the FileList object
+    var files = evt.target.files; 
+    		
+    if (files) {
+        for (var i=0, f; f=files[i]; i++) {
+	          var r = new FileReader();
+            r.onload = (function(f) {
+                return function(e) {
+                       var mac = e.target.result;
+					   
+					   if ( (f.name).endsWith("xliff") ){
+						 
+						 localStorage.xliffName=f.name;
+						 xliffContent=mac;
+						 parseXliff();
+						}
+						else if ( (f.name).endsWith(".tmx") ){
+						 tmxContent=mac;
+						// alert(tmxContent);
+						 parseTMX();
+						}
+						else if ( (f.name).endsWith(".tbx") ){
+						 tbxContent=mac;
+						// alert(tmxContent);
+						 parseTBX();
+						}						
+					/*	
+                    alert( "Got the file.n" 
+                          +"name: " + f.name + "n"
+                          +"type: " + f.type + "n"
+                          +"size: " + f.size + " bytesn"
+                          + "starts with: " + mac.substr(1, 10)
+                    ); */ 
+					
+                };
+            })(f);
+
+            r.readAsText(f);
+			//r.readAsDataURL(f);
+        }   
+    } else {
+	      alert("Failed to load files"); 
+    }
+  }
+  
+  document.getElementById('fileinput').addEventListener('change', readMultipleFiles, false);
+  
+  
+ }
+ 
+ 
+ function parseXliff(){
+
+ var tbl=document.getElementById("tableDiv");
+ if (tbl !== null)
+  tbl.innerHTML="";
+  
+ // localStorage.clear();
+ 
+ parser = new DOMParser();
+ xmlDoc = parser.parseFromString(xliffContent,"text/xml");
+ //get all transunits
+ var transunits= xmlDoc.getElementsByTagName("trans-unit");
+ var source; var target; var text="start";
+ var tchildren;
+ 
+ targetNodes=[];
+ 
+            var table = document.createElement('table');
+            table.innerHTML = "";
+            var thead = document.createElement('thead');
+            table.appendChild(thead);
+            var hrow = document.createElement('tr');
+			var cell = document.createElement('td');
+			hrow.appendChild(cell);
+			cell.setAttribute("class","index");
+			cell = document.createElement('td');
+			hrow.appendChild(cell);
+			cell.setAttribute("class","source");
+			cell = document.createElement('td');
+			hrow.appendChild(cell);
+			cell.setAttribute("class","target");
+			
+            thead.appendChild(hrow);
+            var tbody = document.createElement('tbody');
+            table.appendChild(tbody);
+			
+			var cell;
+            var cellText;
+ 
+ for (var i=0;i < transunits.length; i++ ){
+      tchildren=transunits[i].children;
+	  
+      var hrow = document.createElement('tr');	  
+         cell = document.createElement('td');	 
+         cellText = document.createTextNode(i+1);
+         cell.appendChild(cellText);
+         hrow.appendChild(cell);
+		// cell.setAttribute("id","index");
+	  
+	  
+         cell = document.createElement('td');
+         source=tchildren[0].innerHTML;		 
+         cellText = document.createTextNode(source);
+         cell.appendChild(cellText);
+         hrow.appendChild(cell);
+        // cell.setAttribute("id","xliff");		 
+		 
+	     target=tchildren[1].innerHTML; 
+		 targetNodes.push(tchildren[1]);
+         cell = document.createElement('td');	 
+		 
+         cellText = document.createTextNode(target);
+         cell.appendChild(cellText);
+		 cell.setAttribute("contenteditable","true");
+		 cell.setAttribute("onmouseout","modifyDOM(this)");
+		 cell.setAttribute("onclick","modifyDOMfromTMX(this)");
+         hrow.appendChild(cell);
+		 //cell.setAttribute("id","xliff");
+        		 	
+      tbody.appendChild(hrow);
+	 
+ }
+
+ document.getElementById("tableDiv").appendChild(table);
+ table.setAttribute("class","xliffTable table table-striped");
+ }
+ 
+ /* change this to kick off a search an populate the 
+ resultsDiv sidebar
+ add events to the sidebar results to copy items to the
+ target column
+ */
+ function modifyDOMfromTMX(x){
+ 
+// in xliff target col
+ var cellIndex = x.cellIndex;
+ var rowIndex = x.parentNode.rowIndex;
+ // get the xliff source col text from the xmldoc 
+ var transunits= xmlDoc.getElementsByTagName("trans-unit");
+ tchild=transunits[rowIndex-1].children[0].innerHTML;
+ // check if we have a tmxDoc
+ if (tmxDoc == undefined) return;
+ 
+ var segments= tmxDoc.getElementsByTagName("seg");
+ /*set a max match return counter that limits
+ the number of hints displayed 
+ local for now but use range later
+ */
+ var hitLimit=6;
+ var counter=0;
+ var match50=2;
+ var cell;
+ var cellText;
+ var tbl=document.getElementById("resultsDiv");
+ if (tbl !== null)
+    tbl.innerHTML="";
+	
+    var table = document.createElement('table');
+    table.innerHTML = "";
+    var thead = document.createElement('thead');
+    table.appendChild(thead);
+    var hrow = document.createElement('tr');
+	cell=document.createElement('th');
+	cellText = document.createTextNode("TMX search results (copy and paste to target)");
+    cell.appendChild(cellText);
+    hrow.appendChild(cell);
+	
+    thead.appendChild(hrow);
+    var tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+	
+			
+ for (var i=0;i < segments.length; i=i+2){
+   source=segments[i].innerHTML;	
+   
+   if ( (tchild.indexOf(source) >-1)  ||  (source.indexOf(tchild) >-1) ) { 	  
+	     var hrow = document.createElement('tr');	  	  
+         cell = document.createElement('td');
+         cellText = document.createTextNode(segments[i+1].innerHTML);
+         cell.appendChild(cellText);
+         hrow.appendChild(cell);	 	    
+         tbody.appendChild(hrow);
+	  
+	 
+	  
+	  if (++counter > hitLimit)
+	     break;
+   
+     /* var r = confirm("Source: "+ source+"\nTarget: \n"+segments[i+1].innerHTML);
+        if (r == true) {
+           x.innerHTML= segments[i+1].innerHTML;  document.getElementById("lastCellEdit").innerHTML=rowIndex;
+		   x.focus();
+		   break;
+		   
+		   
+         } else {
+         return;
+         } 
+		 */
+ }// if source
+ }
+ 
+ 
+ document.getElementById("resultsDiv").appendChild(table); 
+ 
+
+  
+// now update the targetnode in the xliff file 
+/*
+ var child = targetNodes[rowIndex-1];
+ var old=child.innerHTML;
+ try{
+ if (old !== x.innerHTML ){
+  child.innerHTML=x.innerHTML;
+  document.getElementById("lastCellEdit").innerHTML=rowIndex;
+ // alert(old + " ----> "  + x.innerHTML);
+  }
+ }
+ catch(error) {
+ alert("Copy the target segment with CTRL+C & CTRL+V to fix the empty segment");
+ }
+ */
+ }
+
+ 
+ function modifyDOM(x){
+ 
+ var cellIndex = x.cellIndex;
+ var rowIndex = x.parentNode.rowIndex;
+ 
+ var child = targetNodes[rowIndex-1];
+ var old=child.innerHTML;
+ try{
+ if (old !== x.innerHTML ){
+  if (x.innerHTML=="<br>")
+  child.innerHTML="";
+  else
+  child.innerHTML=x.innerHTML;
+  
+ // alert(old + " ----> "  + x.innerHTML);
+  document.getElementById("lastCellEdit").innerHTML=rowIndex;
+  }
+ }
+ catch(error) {
+ // alert(old + " ----> "  + x.innerHTML);
+ //if (child.innerHTML =="")
+// alert("Copy the target segment with CTRL+C & CTRL+V to fix the empty segment");
+ 
+ }
+ 
+ }
+ 
+ function storeXliff(){
+ try{
+  var xmlString = new XMLSerializer().serializeToString( xmlDoc );
+  //localStorage.xliff=xliffContent;
+  localStorage.xliff=xmlString;
+  }catch(error){
+  alert (error);
+  }
+ 
+ }
+
+ function saveXliff(){
+ var xmlString = new XMLSerializer().serializeToString( xmlDoc );
+ 
+ var blob = new Blob([xmlString], { type: "text/xml"});
+	 	var a = document.createElement('a');
+  	    a.href = window.URL.createObjectURL(blob);
+	    document.body.appendChild(a);
+	    a.download = localStorage.xliffName;
+        a.click();	
+ 
+ }
+ 
+ /* do as simple a parsing operation as possible
+ assume a bilingual tmx and get only the <segs>  
+ */
+ function parseTMX(){
+
+ var tbl=document.getElementById("tmxDiv");
+ if (tbl !== null)
+  tbl.innerHTML="";
+  
+ // localStorage.clear();
+ 
+ parser = new DOMParser();
+ tmxDoc = parser.parseFromString(tmxContent,"text/xml");
+ //get all segments
+ var segments= tmxDoc.getElementsByTagName("seg");
+ alert("Total segments in the read=only TMX: "+segments.length);
+ var source; var target; var text="start";
+ var tchildren;
+ 
+            var table = document.createElement('table');
+            table.innerHTML = "";
+            var thead = document.createElement('thead');
+            table.appendChild(thead);
+            var hrow = document.createElement('tr');
+			var cell = document.createElement('td');
+			hrow.appendChild(cell);
+			cell.setAttribute("class","source");
+			cell = document.createElement('td');
+			hrow.appendChild(cell);
+			cell.setAttribute("class","target");
+            thead.appendChild(hrow);
+            var tbody = document.createElement('tbody');
+            table.appendChild(tbody);
+			
+            var cellText;
+ 
+ for (var i=0;i < segments.length; i++ ){  
+      var hrow = document.createElement('tr');	  
+  	  
+         cell = document.createElement('td');
+         source=segments[i].innerHTML;		 
+         cellText = document.createTextNode(source);
+         cell.appendChild(cellText);
+         hrow.appendChild(cell);	 
+		// cell.setAttribute("id","xliff");
+	     target=segments[++i].innerHTML; 
+		
+         cell = document.createElement('td');	 
+		 
+         cellText = document.createTextNode(target);
+         cell.appendChild(cellText);
+         hrow.appendChild(cell);
+        /// cell.setAttribute("id","xliff");		 
+      tbody.appendChild(hrow);
+	 
+ }
+
+ document.getElementById("tmxDiv").appendChild(table);
+  table.setAttribute("class","xliffTable table table-striped");
+ }
+ 
+ function parseTBX(){
+
+ var tbl=document.getElementById("tbxDiv");
+ if (tbl !== null)
+  tbl.innerHTML="";
+  
+ // localStorage.clear();
+ 
+ parser = new DOMParser();
+ tbxDoc = parser.parseFromString(tbxContent,"text/xml");
+ //get all transunits
+ var transunits= tbxDoc.getElementsByTagName("termEntry");
+ var source; var target; var text="start";
+ var tchildren;
+ 
+ 
+            var table = document.createElement('table');
+            table.innerHTML = "";
+            var thead = document.createElement('thead');
+            table.appendChild(thead);
+            var hrow = document.createElement('tr');
+            thead.appendChild(hrow);
+            var tbody = document.createElement('tbody');
+            table.appendChild(tbody);
+			
+			var cell;
+            var cellText;
+			
+ alert("Number of term entries in this read-only tbx: "+transunits.length);
+ for (var i=0;i < transunits.length; i++ ){
+      tchildren=transunits[i].getElementsByTagName("term");
+	 // alert("tchild  "+tchildren.length);
+	   var hrow = document.createElement('tr');	
+	   
+	  for (var z=0;z < tchildren.length; z++ ){
+   
+         cell = document.createElement('td');
+         source=tchildren[z].innerHTML;		 
+         cellText = document.createTextNode(source);
+         cell.appendChild(cellText);
+         hrow.appendChild(cell);
+        
+
+	  }
+	   tbody.appendChild(hrow);
+	 
+ }
+ document.getElementById("tbxDiv").appendChild(table);
+ ///table.setAttribute("class","xliffTable");
+ }
+ 
+ 
+</script>
+
+</head>
+<body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <label for="fileinput">Load "xliff",".tmx", or ".tbx" file:<input type="file" id="fileinput" multiple /></label>
+            <!--
+            <input type="button" id="btnParse" value="Import file into table" onclick="parseXliff()"/>
+            -->
+            <input type="button" id="btnStore" value="Store translation in Browser" onclick="storeXliff()"/>
+            <input type="button" id="btnSave" value="Export translation to file" onclick="saveXliff()"/>
+            <label for"lastCellEdit">Last target segment changed:<output id="lastCellEdit">None</output></label> 
+                 
+        </div>
+      </nav>
+
+<div id="header">
+
+</div>
+<div id="bod">
+<div id=tableDiv></div><div id=resultsDiv></div>
+</div>
+<div id="tmx"> <div id=tmxDiv></div><div id="tbxDiv"></div>
+</div>
+
+
+
+
+</body>
+
+</html>

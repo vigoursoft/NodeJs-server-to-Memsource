@@ -1,0 +1,15 @@
+extends layout
+
+block content
+
+  h4 #{title}
+          
+  form(method='POST' action='')
+    fieldset(class='fields')
+    div.form-group
+      label(for='user') User:
+      input#user.form-control(type='text', placeholder='User name' name='user' required='true' value='' )
+    div.form-group
+      label(for='password') Password:
+      input#password.form-control(type='password', placeholder='Password' name='password' required='true' value='' )
+    button.btn.btn-primary(type='submit') Submit
